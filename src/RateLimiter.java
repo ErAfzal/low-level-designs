@@ -8,7 +8,7 @@ public class RateLimiter {
 
     private final int maxBucketSize; // max bucket
     private final int refillTokens; //refill per unit time
-    private int currentTokens;
+    private int currentTokens;// current size of bucket
 
     ScheduledExecutorService executer;
 
