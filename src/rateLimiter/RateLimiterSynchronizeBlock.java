@@ -1,10 +1,13 @@
+package rateLimiter;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-public class RateLimiter {
+public class RateLimiterSynchronizeBlock {
     //token bucket Rate Limiter using java
+    //using synchronize block
 
     private final int maxBucketSize; // max bucket
     private final int refillTokens; //refill per unit time
@@ -12,12 +15,12 @@ public class RateLimiter {
 
     ScheduledExecutorService executer;
 
-    public RateLimiter(int maxBucketSize, int refill) {
+    public RateLimiterSynchronizeBlock(int maxBucketSize, int refill) {
         this.maxBucketSize = maxBucketSize;
         this.refillTokens = refill;
         currentTokens=maxBucketSize;
         executer=new ScheduledThreadPoolExecutor(1);
-        //executer=new ScheduledThreadPoolExecutor(1, TimeUnit.SECONDS);
+        executer.scheduleAtFixedRate(()->this.refillTokens(),0,1,TimeUnit.SECONDS);
     }
 
     synchronized boolean isRequestAllowed(){
@@ -42,8 +45,8 @@ public class RateLimiter {
     }
 
     public static void main(String[] args) throws InterruptedException {
-        RateLimiter rt=new RateLimiter(5,1);
-        rt.executer.scheduleAtFixedRate(()-> rt.refillTokens(),0,1,TimeUnit.SECONDS);
+        RateLimiterSynchronizeBlock rt=new RateLimiterSynchronizeBlock(5,1);
+        //rt.executer.scheduleAtFixedRate(()-> rt.refillTokens(),0,1,TimeUnit.SECONDS);
 
         Runnable task=()->{
             //System.out.println(Thread.currentThread().getName()+" "+);
@@ -61,6 +64,11 @@ public class RateLimiter {
         }
         executorService.shutdown();
         rt.stop();
+
+        //since every thread comes with a different stack of its own. So if we dont stop our scheduled frameworks,
+        // frameworks(last 2  above lines), they will run forever.
+        // in the current case, our two executor frameworks, total 3 thread will stop.
+        //and then our main thread will also stop
     }
 
 }
